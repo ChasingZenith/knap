@@ -381,29 +381,31 @@ function focus_window()
       os.execute('xdotool windowactivate ' .. window_id_x11)
     end
   elseif (xdg_session_type == "wayland") then
-    -- https://github.com/lucaswerkmeister/activate-window-by-title
-    -- This way is not very perfect but work
-    -- I don't know how to get something similar to windows id like in X.
-    -- So I only activate window which has suffix '.tex'
-    os.execute("busctl --user call org.gnome.Shell /de/lucaswerkmeister/ActivateWindowByTitle de.lucaswerkmeister.ActivateWindowByTitle activateBySuffix s 'tex' > /dev/null")
+    local home = os.getenv("HOME")
+    os.execute(home .. "/.local/bin/raise_neovim_tex.sh")
+  -- elseif (xdg_session_type == "wayland") then
+  --   -- https://github.com/lucaswerkmeister/activate-window-by-title
+  --   -- This way is not very perfect but work
+  --   -- I don't know how to get something similar to windows id like in X.
+  --   -- So I only activate window which has suffix '.tex'
+  --   os.execute("busctl --user call org.gnome.Shell /de/lucaswerkmeister/ActivateWindowByTitle de.lucaswerkmeister.ActivateWindowByTitle activateBySuffix s 'tex' > /dev/null")
   end
 end
 
 -- move the cursor to a location if the file requested is the current
 -- one, or else just report where it should go
 function jump(filename,line,column)
+  filename = vim.fn.fnameescape(filename)
   local bufnr = vim.fn.bufnr(filename)
 
-  -- switch buffer if opened
-  if (bufnr == -1) then
-    -- open file file if necessary
-    if (not vim.fn.filereadable(filename)) then
+  if (bufnr == -1) then -- switch buffer if opened
+    if (not vim.fn.filereadable(filename)) then -- open file file if necessary
       print('W: jump spot at line ' .. tostring(line) .. ' col ' ..
           tostring(column) .. ' in ' .. filename)
       return -- early
     end
-    api.nvim_command("edit " .. vim.fn.fnameescape(filename))
-    bufnr = vim.fn.bufnr(filename)
+    -- api.nvim_command("edit " .. filename)
+    bufnr = vim.fn.bufadd(filename) -- need test
     print('jump to line ' .. tostring(line) .. ' in ' .. filename)
   end
 
@@ -411,8 +413,8 @@ function jump(filename,line,column)
   api.nvim_win_set_cursor(0,{line,column})
   vim.cmd.normal('z.')
   focus_window()
-    -- print('jumping to line ' .. tostring(line) .. ' col ' ..
-        -- tostring(column))
+    print('jumping to line ' .. tostring(line) .. ' col ' ..
+        tostring(column))
 end
 
 function get_pid_viewer(lcmd)
